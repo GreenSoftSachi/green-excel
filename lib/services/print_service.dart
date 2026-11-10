@@ -122,7 +122,7 @@ class PrintService {
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 pw.Column(
-                  cross: pw.CrossAxisAlignment.start,
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     pw.Text(
                       settings.title,
@@ -139,7 +139,7 @@ class PrintService {
                   ],
                 ),
                 pw.Column(
-                  cross: pw.CrossAxisAlignment.end,
+                  crossAxisAlignment: pw.CrossAxisAlignment.end,
                   children: [
                     pw.Text(
                       'Developer: Sachinthaka Sandaruwan',
