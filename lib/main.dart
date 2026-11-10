@@ -386,23 +386,13 @@ class _ExcelHomeScreenState extends State<ExcelHomeScreen> {
         title: Row(
           children: [
             // App Icon Badge
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Center(
-                child: Text(
-                  'X',
-                  style: TextStyle(
-                    color: Color(0xFF107C41),
-                    fontWeight: FontWeight.w900,
-                    fontSize: 20,
-                    fontFamily: 'serif',
-                  ),
-                ),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                'assets/icon/app_icon.png',
+                width: 34,
+                height: 34,
+                fit: BoxFit.contain,
               ),
             ),
             const SizedBox(width: 8),

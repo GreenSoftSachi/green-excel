@@ -17,30 +17,13 @@ class AboutAppDialog extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Logo
-              Container(
-                width: 76,
-                height: 76,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF107C41),
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF107C41).withOpacity(0.35),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: const Center(
-                  child: Text(
-                    'X',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 44,
-                      fontWeight: FontWeight.w900,
-                      fontFamily: 'serif',
-                    ),
-                  ),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: Image.asset(
+                  'assets/icon/app_icon.png',
+                  width: 80,
+                  height: 80,
+                  fit: BoxFit.contain,
                 ),
               ),
               const SizedBox(height: 14),
