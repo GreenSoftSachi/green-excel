@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'dart:typed_data';
+import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
+import 'package:share_plus/share_plus.dart';
 import '../models/cell_data.dart';
 import '../models/sheet_data.dart';
 import '../engine/formula_evaluator.dart';
@@ -191,17 +193,18 @@ class PrintService {
 
   static Future<void> printDocument(SheetData sheet, PrintSettings settings) async {
     final pdfBytes = await generatePdf(sheet, settings);
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdfBytes,
-      name: '${settings.title}_${sheet.name}.pdf',
-    );
+    final tempDir = await getTemporaryDirectory();
+    final fileName = '${settings.title.replaceAll(RegExp(r"[^a-zA-Z0-9_-]"), "_")}_${sheet.name}.pdf';
+    final file = File('${tempDir.path}/$fileName');
+    await file.writeAsBytes(pdfBytes);
+    await Share.shareXFiles([XFile(file.path)], text: 'Print / Save PDF: ${settings.title}');
   }
 
   static Future<void> sharePdf(SheetData sheet, PrintSettings settings) async {
     final pdfBytes = await generatePdf(sheet, settings);
-    await Printing.sharePdf(
-      bytes: pdfBytes,
-      filename: '${sheet.name}_report.pdf',
-    );
+    final tempDir = await getTemporaryDirectory();
+    final file = File('${tempDir.path}/${sheet.name}_report.pdf');
+    await file.writeAsBytes(pdfBytes);
+    await Share.shareXFiles([XFile(file.path)], text: 'Exported from Green Excel 2026 Pro');
   }
 }
