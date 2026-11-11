@@ -71,7 +71,7 @@ class _ExcelHomeScreenState extends State<ExcelHomeScreen> {
   CellRange _selection = const CellRange(startRow: 0, startCol: 0, endRow: 0, endCol: 0);
   RangeStats _rangeStats = const RangeStats();
 
-  UserAccount _userAccount = UserAccount.mockGoogle('Sachinthaka Sandaruwan', 'sachinthaka.sandaruwan@gmail.com');
+  UserAccount _userAccount = UserAccount.defaultGuest();
 
   final TextEditingController _formulaController = TextEditingController();
   final List<Workbook> _undoStack = [];
@@ -81,7 +81,7 @@ class _ExcelHomeScreenState extends State<ExcelHomeScreen> {
   @override
   void initState() {
     super.initState();
-    _workbook = StorageService.createBudgetTemplate();
+    _workbook = StorageService.createBlankWorkbook();
     _syncFormulaBar();
     _updateStats();
   }
@@ -504,24 +504,41 @@ class _ExcelHomeScreenState extends State<ExcelHomeScreen> {
             onPressed: _openCharts,
           ),
 
-          // Cloud User Avatar
-          InkWell(
-            onTap: _openAuthDialog,
-            borderRadius: BorderRadius.circular(16),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 5),
-              child: CircleAvatar(
-                radius: 14,
-                backgroundColor: _userAccount.provider == AuthProviderType.microsoft
-                    ? const Color(0xFF0078D4)
-                    : (_userAccount.provider == AuthProviderType.google ? const Color(0xFFEA4335) : Colors.grey.shade700),
-                child: Text(
-                  _userAccount.displayName.isNotEmpty ? _userAccount.displayName[0].toUpperCase() : 'G',
-                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+          // Cloud User / Sign In button
+          if (!_userAccount.isConnected)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: TextButton.icon(
+                style: TextButton.styleFrom(
+                  backgroundColor: Colors.white.withOpacity(0.18),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  minimumSize: Size.zero,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                icon: const Icon(Icons.person_outline, size: 14, color: Colors.white),
+                label: const Text('Sign In', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                onPressed: _openAuthDialog,
+              ),
+            )
+          else
+            InkWell(
+              onTap: _openAuthDialog,
+              borderRadius: BorderRadius.circular(16),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 5),
+                child: CircleAvatar(
+                  radius: 14,
+                  backgroundColor: _userAccount.provider == AuthProviderType.microsoft
+                      ? const Color(0xFF0078D4)
+                      : (_userAccount.provider == AuthProviderType.google ? const Color(0xFFEA4335) : Colors.grey.shade700),
+                  child: Text(
+                    _userAccount.displayName.isNotEmpty ? _userAccount.displayName[0].toUpperCase() : 'U',
+                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ),
-          ),
 
           // Overflow Menu
           PopupMenuButton<String>(

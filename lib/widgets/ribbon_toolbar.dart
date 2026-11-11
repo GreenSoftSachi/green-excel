@@ -51,6 +51,7 @@ class RibbonToolbar extends StatefulWidget {
 
 class _RibbonToolbarState extends State<RibbonToolbar> {
   RibbonTab _activeTab = RibbonTab.home;
+  bool _isExpanded = true;
 
   @override
   Widget build(BuildContext context) {
@@ -68,69 +69,93 @@ class _RibbonToolbarState extends State<RibbonToolbar> {
           Container(
             height: 36,
             color: const Color(0xFFF8F9FA),
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: RibbonTab.values.map((tab) {
-                final isSelected = _activeTab == tab;
-                final isCopilot = tab == RibbonTab.copilot;
+            child: Row(
+              children: [
+                Expanded(
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: RibbonTab.values.map((tab) {
+                      final isSelected = _activeTab == tab;
+                      final isCopilot = tab == RibbonTab.copilot;
 
-                return InkWell(
-                  onTap: () {
-                    if (isCopilot) {
-                      widget.onOpenCopilot();
-                    } else {
-                      setState(() => _activeTab = tab);
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          color: isSelected ? const Color(0xFF107C41) : Colors.transparent,
-                          width: 2.5,
-                        ),
-                      ),
-                      color: isSelected ? Colors.white : Colors.transparent,
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          tab.icon,
-                          size: 15,
-                          color: isCopilot
-                              ? const Color(0xFF107C41)
-                              : (isSelected ? const Color(0xFF107C41) : Colors.grey.shade700),
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          tab.title,
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                            color: isCopilot
-                                ? const Color(0xFF107C41)
-                                : (isSelected ? const Color(0xFF107C41) : Colors.black87),
+                      return InkWell(
+                        onTap: () {
+                          if (isCopilot) {
+                            widget.onOpenCopilot();
+                          } else {
+                            setState(() {
+                              _activeTab = tab;
+                              _isExpanded = true;
+                            });
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(
+                                color: isSelected && _isExpanded ? const Color(0xFF107C41) : Colors.transparent,
+                                width: 2.5,
+                              ),
+                            ),
+                            color: isSelected && _isExpanded ? Colors.white : Colors.transparent,
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                tab.icon,
+                                size: 15,
+                                color: isCopilot
+                                    ? const Color(0xFF107C41)
+                                    : (isSelected && _isExpanded ? const Color(0xFF107C41) : Colors.grey.shade700),
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                tab.title,
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: isSelected && _isExpanded ? FontWeight.bold : FontWeight.w500,
+                                  color: isCopilot
+                                      ? const Color(0xFF107C41)
+                                      : (isSelected && _isExpanded ? const Color(0xFF107C41) : Colors.black87),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
+                      );
+                    }).toList(),
+                  ),
+                ),
+                // Collapse / Expand toggle button
+                InkWell(
+                  onTap: () => setState(() => _isExpanded = !_isExpanded),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    height: 36,
+                    alignment: Alignment.center,
+                    child: Icon(
+                      _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                      size: 18,
+                      color: Colors.grey.shade600,
                     ),
                   ),
-                );
-              }).toList(),
+                ),
+              ],
             ),
           ),
 
-          // Ribbon Actions Bar
-          Container(
-            height: 48,
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: _buildTabActions(),
+          // Ribbon Actions Bar (Collapsible)
+          if (_isExpanded)
+            Container(
+              height: 48,
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: _buildTabActions(),
+              ),
             ),
-          ),
         ],
       ),
     );

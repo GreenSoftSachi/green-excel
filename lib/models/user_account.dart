@@ -23,8 +23,8 @@ class UserAccount {
 
   static UserAccount defaultGuest() {
     return UserAccount(
-      displayName: 'Local User',
-      email: 'offline.workspace@greensoft.local',
+      displayName: 'Guest User',
+      email: 'guest@local',
       avatarUrl: '',
       provider: AuthProviderType.none,
       lastSync: DateTime.now(),
@@ -34,8 +34,8 @@ class UserAccount {
 
   static UserAccount mockGoogle(String name, String email) {
     return UserAccount(
-      displayName: name.isNotEmpty ? name : 'Sachinthaka Sandaruwan',
-      email: email.isNotEmpty ? email : 'sachinthaka@gmail.com',
+      displayName: name.isNotEmpty ? name : 'Google User',
+      email: email.isNotEmpty ? email : 'user@gmail.com',
       avatarUrl: 'G',
       provider: AuthProviderType.google,
       lastSync: DateTime.now(),
@@ -45,8 +45,8 @@ class UserAccount {
 
   static UserAccount mockMicrosoft(String name, String email) {
     return UserAccount(
-      displayName: name.isNotEmpty ? name : 'Sachinthaka Sandaruwan',
-      email: email.isNotEmpty ? email : 'sachinthaka@outlook.com',
+      displayName: name.isNotEmpty ? name : 'Microsoft User',
+      email: email.isNotEmpty ? email : 'user@outlook.com',
       avatarUrl: 'M',
       provider: AuthProviderType.microsoft,
       lastSync: DateTime.now(),

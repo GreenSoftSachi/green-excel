@@ -16,13 +16,13 @@ class AuthDialog extends StatefulWidget {
 }
 
 class _AuthDialogState extends State<AuthDialog> {
-  final TextEditingController _nameController = TextEditingController(text: 'Sachinthaka Sandaruwan');
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   bool _isCustomizing = false;
 
   void _signInGoogle() {
-    final email = _emailController.text.trim().isNotEmpty ? _emailController.text.trim() : 'sachinthaka.sandaruwan@gmail.com';
-    final name = _nameController.text.trim().isNotEmpty ? _nameController.text.trim() : 'Sachinthaka Sandaruwan';
+    final email = _emailController.text.trim().isNotEmpty ? _emailController.text.trim() : 'user@gmail.com';
+    final name = _nameController.text.trim().isNotEmpty ? _nameController.text.trim() : 'Google User';
     final acc = UserAccount.mockGoogle(name, email);
     widget.onAccountChanged(acc);
     Navigator.pop(context);
@@ -32,8 +32,8 @@ class _AuthDialogState extends State<AuthDialog> {
   }
 
   void _signInMicrosoft() {
-    final email = _emailController.text.trim().isNotEmpty ? _emailController.text.trim() : 'sachinthaka.sandaruwan@outlook.com';
-    final name = _nameController.text.trim().isNotEmpty ? _nameController.text.trim() : 'Sachinthaka Sandaruwan';
+    final email = _emailController.text.trim().isNotEmpty ? _emailController.text.trim() : 'user@outlook.com';
+    final name = _nameController.text.trim().isNotEmpty ? _nameController.text.trim() : 'Microsoft User';
     final acc = UserAccount.mockMicrosoft(name, email);
     widget.onAccountChanged(acc);
     Navigator.pop(context);

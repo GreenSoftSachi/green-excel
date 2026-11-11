@@ -9,7 +9,12 @@ import '../models/sheet_data.dart';
 import '../engine/formula_evaluator.dart';
 
 class StorageService {
-  static const String _prefKeyWorkbook = 'green_excel_active_workbook_v1';
+  static const String _prefKeyWorkbook = 'green_excel_active_workbook_v2';
+
+  static Workbook createBlankWorkbook() {
+    final sheet = SheetData(name: 'Sheet1');
+    return Workbook(title: 'Book1', sheets: [sheet]);
+  }
 
   static Future<void> saveWorkbook(Workbook workbook) async {
     final prefs = await SharedPreferences.getInstance();
