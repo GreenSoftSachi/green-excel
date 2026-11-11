@@ -1,4 +1,4 @@
-name: Build Green Excel APK & Play Store Bundle
+name: Build Green Excel v1 APK
 
 on:
   push:
@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    name: Build Android Release APK & AAB
+  build-native-v1:
+    name: Package and Sign Green Excel v1
     runs-on: ubuntu-latest
 
     steps:
@@ -20,32 +20,42 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Set up Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        flutter-version: '3.24.0'
-        channel: 'stable'
-        cache: true
+    - name: Package Green Excel v1
+      run: |
+        python3 native_apk_build/build_apk.py
 
-    - name: Get Dependencies
-      run: flutter pub get
+    - name: Zipalign and Sign APK
+      run: |
+        BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/*/ | sort -V | tail -n 1)
+        ZIPALIGN="${BUILD_TOOLS_DIR}zipalign"
+        APKSIGNER="${BUILD_TOOLS_DIR}apksigner"
+        echo "Using build tools from $BUILD_TOOLS_DIR"
+        
+        # 1. Zipalign
+        $ZIPALIGN -p -f -v 4 unsigned.apk aligned.apk
+        
+        # 2. Keystore for Sachinthaka Sandaruwan
+        keytool -genkey -v -keystore green_excel.jks \
+          -alias greenexcel \
+          -keyalg RSA -keysize 2048 -validity 10000 \
+          -dname "CN=Sachinthaka Sandaruwan, OU=Research and Development, O=Green Soft Technologies, L=Colombo, C=LK" \
+          -storepass greenexcel2026 -keypass greenexcel2026
+        
+        # 3. Sign
+        $APKSIGNER sign --ks green_excel.jks \
+          --ks-key-alias greenexcel \
+          --ks-pass pass:greenexcel2026 \
+          --key-pass pass:greenexcel2026 \
+          --out Green-Excel-v1.apk \
+          aligned.apk
+        
+        # 4. Verify
+        $APKSIGNER verify --verbose Green-Excel-v1.apk
+        ls -la Green-Excel-v1.apk
 
-    - name: Build Release APK
-      run: flutter build apk --release --no-tree-shake-icons --verbose
-
-    - name: Build Play Store App Bundle (AAB)
-      run: flutter build appbundle --release --no-tree-shake-icons
-
-    - name: Upload Release APK
+    - name: Upload Green-Excel-v1 Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Green-Excel-Release-APK
-        path: build/app/outputs/flutter-apk/app-release.apk
-        retention-days: 30
-
-    - name: Upload Play Store AAB Bundle
-      uses: actions/upload-artifact@v4
-      with:
-        name: Green-Excel-PlayStore-AAB
-        path: build/app/outputs/bundle/release/app-release.aab
+        name: Green-Excel-v1-APK
+        path: Green-Excel-v1.apk
         retention-days: 30

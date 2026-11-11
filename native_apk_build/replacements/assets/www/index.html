@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Green Excel</title>
+  <link rel="icon" href="./favicon.ico" />
+  
+  <style>
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #f3f3f3; }
+    #gridcraft_canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    #gridcraft_loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      color: #333; font: 15px system-ui, -apple-system, sans-serif; pointer-events: none; background: #f8fafc; z-index: 100; }
+    
+    @keyframes pulse { 0% { opacity: 0.6; transform: scale(0.98); } 50% { opacity: 1; transform: scale(1.02); } 100% { opacity: 0.6; transform: scale(0.98); } }
+    @keyframes popIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+  </style>
+</head>
+<body>
+  <canvas id="gridcraft_canvas"></canvas>
+  
+  <!-- Loading Screen -->
+  <div id="gridcraft_loading">
+    <img src="./app_icon.png" style="width: 76px; height: 76px; margin-bottom: 14px; border-radius: 16px; box-shadow: 0 8px 24px rgba(16,124,65,0.25); animation: pulse 2s infinite ease-in-out;" alt="Green Excel" />
+    <div style="font-size: 20px; font-weight: 800; color: #107C41; letter-spacing: -0.3px;">Green Excel</div>
+    <div style="font-size: 13px; color: #64748b; margin-top: 4px;">Loading workspace&hellip;</div>
+  </div>
+
+  <!-- Floating About Trigger Button -->
+  <div id="green_about_trigger" onclick="toggleGreenAbout(true)" title="About Green Excel" style="position:fixed;bottom:14px;right:14px;width:34px;height:34px;border-radius:50%;background:#107C41;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.3);cursor:pointer;z-index:999;font-family:system-ui,sans-serif;user-select:none;transition:transform 0.2s;">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+  </div>
+
+  <!-- About Screen Modal -->
+  <div id="green_about_modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);backdrop-filter:blur(3px);z-index:10000;align-items:center;justify-content:center;font-family:system-ui,-apple-system,sans-serif;padding:16px;">
+    <div style="background:#fff;border-radius:22px;max-width:360px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,0.35);overflow:hidden;animation:popIn 0.22s ease-out;position:relative;text-align:center;">
+      
+      <!-- Top Header Gradient -->
+      <div style="background:linear-gradient(135deg,#107C41,#0b542c);padding:24px 20px 48px;color:#fff;position:relative;">
+        <button onclick="toggleGreenAbout(false)" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.2);border:none;color:#fff;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;line-height:1;">&times;</button>
+        <div style="font-size:12px;letter-spacing:1.2px;text-transform:uppercase;opacity:0.85;font-weight:700;">Office Suite 2026</div>
+        <div style="font-size:24px;font-weight:800;margin-top:2px;letter-spacing:-0.4px;">Green Excel</div>
+        <div style="font-size:11.5px;background:rgba(255,255,255,0.22);display:inline-block;padding:3px 12px;border-radius:12px;margin-top:6px;font-weight:700;">Pro Edition &bull; v1.0.0</div>
+      </div>
+      
+      <!-- Photo Avatar -->
+      <div style="margin-top:-44px;position:relative;display:inline-block;">
+        <img src="./sachinthaka_photo.jpg" alt="Sachinthaka Sandaruwan" style="width:88px;height:88px;border-radius:50%;object-fit:cover;border:4px solid #fff;box-shadow:0 4px 16px rgba(0,0,0,0.22);" />
+      </div>
+
+      <!-- Developer Details -->
+      <div style="padding:10px 22px 22px;">
+        <div style="font-size:18px;font-weight:800;color:#1e293b;">Sachinthaka Sandaruwan</div>
+        <div style="font-size:12px;color:#107C41;font-weight:700;margin-top:3px;line-height:1.4;">Research and Development Engineer<br><span style="color:#64748b;font-weight:600;">(Software and Hardware)</span></div>
+        <div style="font-size:12.5px;color:#0f172a;font-weight:700;margin-top:4px;">Green Soft Technologies</div>
+
+        <div style="margin:14px 0;height:1px;background:#e2e8f0;"></div>
+
+        <!-- Specifications Grid -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:left;font-size:11px;color:#334155;margin-bottom:14px;">
+          <div style="background:#f8fafc;padding:8px 10px;border-radius:10px;border:1px solid #e2e8f0;">
+            <div style="font-weight:700;color:#107C41;">Core Engine</div>
+            <div style="color:#64748b;margin-top:2px;">Compiled WASM</div>
+          </div>
+          <div style="background:#f8fafc;padding:8px 10px;border-radius:10px;border:1px solid #e2e8f0;">
+            <div style="font-weight:700;color:#107C41;">Formulas</div>
+            <div style="color:#64748b;margin-top:2px;">500+ Functions</div>
+          </div>
+          <div style="background:#f8fafc;padding:8px 10px;border-radius:10px;border:1px solid #e2e8f0;">
+            <div style="font-weight:700;color:#107C41;">Format</div>
+            <div style="color:#64748b;margin-top:2px;">XLSX, CSV, ODS</div>
+          </div>
+          <div style="background:#f8fafc;padding:8px 10px;border-radius:10px;border:1px solid #e2e8f0;">
+            <div style="font-weight:700;color:#107C41;">Privacy</div>
+            <div style="color:#64748b;margin-top:2px;">100% Offline</div>
+          </div>
+        </div>
+
+        <button onclick="toggleGreenAbout(false)" style="width:100%;padding:11px;border:none;background:#107C41;color:#fff;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 4px 12px rgba(16,124,65,0.25);">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleGreenAbout(show) {
+      var modal = document.getElementById('green_about_modal');
+      if (modal) modal.style.display = show ? 'flex' : 'none';
+    }
+
+    (function () {
+      var A = window.GreentelAndroid || window.GreenExcelAndroid;
+      if (!A || !A.showKeyboard) return;
+      function editable() {
+        var e = document.activeElement;
+        return !!e && (e.tagName === 'INPUT' || e.tagName === 'TEXTAREA' || e.isContentEditable);
+      }
+      var hideTimer = null, lastTouch = -1e9, lastShow = -1e9;
+      function show() {
+        var now = Date.now();
+        if (!editable() || now - lastTouch > 1500 || now - lastShow < 400) return;
+        clearTimeout(hideTimer);
+        lastShow = now;
+        A.showKeyboard();
+      }
+      function measure() { if (A.measure) A.measure(); }
+      document.addEventListener('touchstart', function () { lastTouch = Date.now(); setTimeout(measure, 350); }, true);
+      document.addEventListener('focusin', function () { if (editable()) clearTimeout(hideTimer); show(); }, true);
+      document.addEventListener('focusout', function () {
+        clearTimeout(hideTimer);
+        hideTimer = setTimeout(function () { if (!editable()) { A.hideKeyboard(); setTimeout(measure, 400); } }, 300);
+      }, true);
+      document.addEventListener('touchend', function () {
+        lastTouch = Date.now();
+        setTimeout(show, 200);
+      }, true);
+    })();
+  </script>
+  <script type="module">
+    import init, * as bindings from './greentel-grid.js';
+    const wasm = await init({ module_or_path: './greentel-grid_bg.wasm' });
+    window.wasmBindings = bindings;
+    dispatchEvent(new CustomEvent("TrunkApplicationStarted", { detail: { wasm } }));
+  </script>
+</body>
+</html>
