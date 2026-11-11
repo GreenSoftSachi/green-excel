@@ -10,6 +10,7 @@ import 'services/storage_service.dart';
 import 'widgets/formula_bar.dart';
 import 'widgets/ribbon_toolbar.dart';
 import 'widgets/spreadsheet_grid.dart';
+import 'widgets/status_bar.dart';
 import 'widgets/copilot_sheet.dart';
 import 'widgets/chart_view.dart';
 import 'widgets/print_dialog.dart';
@@ -38,6 +39,7 @@ class GreenExcelApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         primaryColor: const Color(0xFF107C41),
+        scaffoldBackgroundColor: const Color(0xFFF8F9FA),
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF107C41),
           primary: const Color(0xFF107C41),
@@ -47,7 +49,7 @@ class GreenExcelApp extends StatelessWidget {
         appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFF107C41),
           foregroundColor: Colors.white,
-          elevation: 2,
+          elevation: 1,
         ),
       ),
       home: const ExcelHomeScreen(),
@@ -66,6 +68,9 @@ class _ExcelHomeScreenState extends State<ExcelHomeScreen> {
   late Workbook _workbook;
   int _activeRow = 0;
   int _activeCol = 0;
+  CellRange _selection = const CellRange(startRow: 0, startCol: 0, endRow: 0, endCol: 0);
+  RangeStats _rangeStats = const RangeStats();
+
   UserAccount _userAccount = UserAccount.mockGoogle('Sachinthaka Sandaruwan', 'sachinthaka.sandaruwan@gmail.com');
 
   final TextEditingController _formulaController = TextEditingController();
@@ -76,9 +81,9 @@ class _ExcelHomeScreenState extends State<ExcelHomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Default start with pre-loaded 2026 Budget template
     _workbook = StorageService.createBudgetTemplate();
     _syncFormulaBar();
+    _updateStats();
   }
 
   void _pushHistory() {
@@ -95,6 +100,7 @@ class _ExcelHomeScreenState extends State<ExcelHomeScreen> {
         _workbook = _undoStack.removeLast();
         _recalculate();
         _syncFormulaBar();
+        _updateStats();
       });
     }
   }
@@ -106,6 +112,7 @@ class _ExcelHomeScreenState extends State<ExcelHomeScreen> {
         _workbook = _redoStack.removeLast();
         _recalculate();
         _syncFormulaBar();
+        _updateStats();
       });
     }
   }
@@ -114,11 +121,18 @@ class _ExcelHomeScreenState extends State<ExcelHomeScreen> {
     FormulaEvaluator.evaluateAll(_workbook.activeSheet);
     StorageService.saveWorkbook(_workbook);
     _isAutoSaved = true;
+    _updateStats();
+  }
+
+  void _updateStats() {
+    _rangeStats = _workbook.activeSheet.computeRangeStats(_selection);
   }
 
   void _syncFormulaBar() {
     final cell = _workbook.activeSheet.getCell(_activeRow, _activeCol);
-    _formulaController.text = cell.isFormula ? cell.rawValue : (cell.isCheckbox ? (cell.checked ? 'TRUE' : 'FALSE') : cell.rawValue);
+    _formulaController.text = cell.isFormula
+        ? cell.rawValue
+        : (cell.isCheckbox ? (cell.checked ? 'TRUE' : 'FALSE') : cell.rawValue);
   }
 
   void _onSelectCell(int r, int c) {
@@ -126,6 +140,13 @@ class _ExcelHomeScreenState extends State<ExcelHomeScreen> {
       _activeRow = r;
       _activeCol = c;
       _syncFormulaBar();
+    });
+  }
+
+  void _onSelectRange(int sR, int sC, int eR, int eC) {
+    setState(() {
+      _selection = CellRange(startRow: sR, startCol: sC, endRow: eR, endCol: eC);
+      _updateStats();
     });
   }
 
@@ -148,8 +169,13 @@ class _ExcelHomeScreenState extends State<ExcelHomeScreen> {
   void _onStyleChanged(CellStyle newStyle) {
     _pushHistory();
     setState(() {
-      final cell = _workbook.activeSheet.getCell(_activeRow, _activeCol);
-      cell.style = newStyle;
+      // Apply style to all cells in selected range
+      for (int r = _selection.minRow; r <= _selection.maxRow; r++) {
+        for (int c = _selection.minCol; c <= _selection.maxCol; c++) {
+          final cell = _workbook.activeSheet.getCell(r, c);
+          cell.style = newStyle;
+        }
+      }
       _recalculate();
     });
   }
@@ -157,11 +183,15 @@ class _ExcelHomeScreenState extends State<ExcelHomeScreen> {
   void _onToggleCheckbox() {
     _pushHistory();
     setState(() {
-      final cell = _workbook.activeSheet.getCell(_activeRow, _activeCol);
-      cell.isCheckbox = !cell.isCheckbox;
-      if (cell.isCheckbox) {
-        cell.checked = false;
-        cell.rawValue = 'FALSE';
+      for (int r = _selection.minRow; r <= _selection.maxRow; r++) {
+        for (int c = _selection.minCol; c <= _selection.maxCol; c++) {
+          final cell = _workbook.activeSheet.getCell(r, c);
+          cell.isCheckbox = !cell.isCheckbox;
+          if (cell.isCheckbox) {
+            cell.checked = false;
+            cell.rawValue = 'FALSE';
+          }
+        }
       }
       _recalculate();
       _syncFormulaBar();
@@ -182,11 +212,15 @@ class _ExcelHomeScreenState extends State<ExcelHomeScreen> {
   void _onClearCell() {
     _pushHistory();
     setState(() {
-      final cell = _workbook.activeSheet.getCell(_activeRow, _activeCol);
-      cell.rawValue = '';
-      cell.computedValue = '';
-      cell.isCheckbox = false;
-      cell.checked = false;
+      for (int r = _selection.minRow; r <= _selection.maxRow; r++) {
+        for (int c = _selection.minCol; c <= _selection.maxCol; c++) {
+          final cell = _workbook.activeSheet.getCell(r, c);
+          cell.rawValue = '';
+          cell.computedValue = '';
+          cell.isCheckbox = false;
+          cell.checked = false;
+        }
+      }
       _recalculate();
       _syncFormulaBar();
     });
@@ -211,8 +245,8 @@ class _ExcelHomeScreenState extends State<ExcelHomeScreen> {
       rowsData.sort((a, b) {
         final valA = a[_activeCol].computedValue;
         final valB = b[_activeCol].computedValue;
-        final numA = double.tryParse(valA.replaceAll('\$', '').replaceAll('Rs.', '').trim());
-        final numB = double.tryParse(valB.replaceAll('\$', '').replaceAll('Rs.', '').trim());
+        final numA = double.tryParse(valA.replaceAll('\$', '').replaceAll('Rs.', '').replaceAll(',', '').trim());
+        final numB = double.tryParse(valB.replaceAll('\$', '').replaceAll('Rs.', '').replaceAll(',', '').trim());
         if (numA != null && numB != null) {
           return ascending ? numA.compareTo(numB) : numB.compareTo(numA);
         }
@@ -234,13 +268,24 @@ class _ExcelHomeScreenState extends State<ExcelHomeScreen> {
       context: context,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Insert Excel 2026 Function (fx)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 10),
+            Row(
+              children: [
+                const Icon(Icons.functions, color: Color(0xFF107C41), size: 24),
+                const SizedBox(width: 8),
+                const Text(
+                  'Insert Function (fx) - 2026 Engine',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                const Spacer(),
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+              ],
+            ),
+            const Divider(),
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -249,12 +294,15 @@ class _ExcelHomeScreenState extends State<ExcelHomeScreen> {
                 _fxChip(ctx, '=AVERAGE(', 'Mean Average'),
                 _fxChip(ctx, '=IF(', 'Condition IF'),
                 _fxChip(ctx, '=XLOOKUP(', 'Modern XLOOKUP'),
-                _fxChip(ctx, '=REGEXTEST(', '2026 REGEX Test'),
-                _fxChip(ctx, '=REGEXEXTRACT(', '2026 REGEX Extract'),
-                _fxChip(ctx, '=REGEXREPLACE(', '2026 REGEX Replace'),
+                _fxChip(ctx, '=REGEXTEST(', '2026 Regex Test'),
+                _fxChip(ctx, '=REGEXEXTRACT(', '2026 Regex Extract'),
+                _fxChip(ctx, '=REGEXREPLACE(', '2026 Regex Replace'),
                 _fxChip(ctx, '=PY(', '2026 Python in Excel'),
                 _fxChip(ctx, '=UNIQUE(', 'Dynamic Unique'),
                 _fxChip(ctx, '=SORT(', 'Dynamic Sort'),
+                _fxChip(ctx, '=COUNT(', 'Count'),
+                _fxChip(ctx, '=MAX(', 'Maximum'),
+                _fxChip(ctx, '=MIN(', 'Minimum'),
               ],
             ),
           ],
@@ -265,7 +313,7 @@ class _ExcelHomeScreenState extends State<ExcelHomeScreen> {
 
   Widget _fxChip(BuildContext ctx, String code, String label) {
     return ActionChip(
-      avatar: const Icon(Icons.functions, size: 14, color: Color(0xFF107C41)),
+      avatar: const Icon(Icons.add, size: 14, color: Color(0xFF107C41)),
       label: Text('$label ($code)'),
       onPressed: () {
         Navigator.pop(ctx);
@@ -288,7 +336,7 @@ class _ExcelHomeScreenState extends State<ExcelHomeScreen> {
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => CopilotSheet(
         sheet: _workbook.activeSheet,
-        activeCellKey: SheetData.cellKey(_activeRow, _activeCol),
+        activeCellKey: _selection.toRangeString(),
         onApplyFormula: (formula) {
           _pushHistory();
           setState(() {
@@ -378,25 +426,25 @@ class _ExcelHomeScreenState extends State<ExcelHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final activeCell = _workbook.activeSheet.getCell(_activeRow, _activeCol);
-    final activeKey = SheetData.cellKey(_activeRow, _activeCol);
+    final rangeStr = _selection.toRangeString();
 
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 8,
         title: Row(
           children: [
-            // App Icon Badge
+            // App Logo
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: Image.asset(
                 'assets/icon/app_icon.png',
-                width: 34,
-                height: 34,
+                width: 32,
+                height: 32,
                 fit: BoxFit.contain,
               ),
             ),
             const SizedBox(width: 8),
-            // Title & AutoSave indicator
+            // App Name & Save Status
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -417,7 +465,7 @@ class _ExcelHomeScreenState extends State<ExcelHomeScreen> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        _isAutoSaved ? 'AutoSaved • Play Store Ready' : 'Editing...',
+                        _isAutoSaved ? 'AutoSaved • GridCraft Pro' : 'Editing...',
                         style: const TextStyle(fontSize: 10, color: Colors.white70),
                       ),
                     ],
@@ -436,46 +484,46 @@ class _ExcelHomeScreenState extends State<ExcelHomeScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
-            icon: const Icon(Icons.auto_awesome, size: 16, color: Color(0xFF86EFAC)),
+            icon: const Icon(Icons.auto_awesome, size: 15, color: Color(0xFF86EFAC)),
             label: const Text('Copilot 2026', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
             onPressed: _openCopilot,
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 2),
 
-          // Print Action
+          // Print & PDF
           IconButton(
             icon: const Icon(Icons.print_outlined),
             tooltip: 'Print Options & PDF',
             onPressed: _openPrintDialog,
           ),
 
-          // Chart Action
+          // Charts
           IconButton(
             icon: const Icon(Icons.bar_chart_outlined),
             tooltip: 'Visualizer & Charts',
             onPressed: _openCharts,
           ),
 
-          // Cloud Account Avatar
+          // Cloud User Avatar
           InkWell(
             onTap: _openAuthDialog,
             borderRadius: BorderRadius.circular(16),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 5),
               child: CircleAvatar(
-                radius: 15,
+                radius: 14,
                 backgroundColor: _userAccount.provider == AuthProviderType.microsoft
                     ? const Color(0xFF0078D4)
                     : (_userAccount.provider == AuthProviderType.google ? const Color(0xFFEA4335) : Colors.grey.shade700),
                 child: Text(
                   _userAccount.displayName.isNotEmpty ? _userAccount.displayName[0].toUpperCase() : 'G',
-                  style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
           ),
 
-          // More Options Menu
+          // Overflow Menu
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             onSelected: (val) {
@@ -589,32 +637,34 @@ class _ExcelHomeScreenState extends State<ExcelHomeScreen> {
               onSortDesc: () => _onSort(false),
             ),
 
-            // Top Formula Bar (fx, A1, Value Editor)
+            // Top Formula Bar with Name Box & Multi-line Expand
             FormulaBar(
-              activeCellKey: activeKey,
+              activeRangeText: rangeStr,
               controller: _formulaController,
               onCommit: _onCommitFormula,
               onCancel: _onCancelFormula,
               onFunctionTap: _showFunctionHelper,
             ),
 
-            // Spreadsheet Matrix (Grid)
+            // Main Spreadsheet Grid Matrix
             Expanded(
               child: SpreadsheetGrid(
                 sheet: _workbook.activeSheet,
+                selection: _selection,
                 activeRow: _activeRow,
                 activeCol: _activeCol,
                 onSelectCell: _onSelectCell,
+                onSelectRange: _onSelectRange,
                 onCheckboxToggled: _onCheckboxCellToggled,
                 onCellDoubleTapped: _onCellDoubleTapped,
               ),
             ),
 
-            // Bottom Sheets Bar (Sheet1, Sheet2, + Add Sheet)
+            // Sheet Tabs Bar (Sheet1, Sheet2, +)
             Container(
-              height: 38,
+              height: 36,
               decoration: BoxDecoration(
-                color: const Color(0xFFF3F4F6),
+                color: const Color(0xFFF1F3F5),
                 border: Border(top: BorderSide(color: Colors.grey.shade300, width: 1)),
               ),
               child: Row(
@@ -630,6 +680,9 @@ class _ExcelHomeScreenState extends State<ExcelHomeScreen> {
                           onTap: () {
                             setState(() {
                               _workbook.activeSheetIndex = idx;
+                              _selection = const CellRange(startRow: 0, startCol: 0, endRow: 0, endCol: 0);
+                              _activeRow = 0;
+                              _activeCol = 0;
                               _recalculate();
                               _syncFormulaBar();
                             });
@@ -652,13 +705,13 @@ class _ExcelHomeScreenState extends State<ExcelHomeScreen> {
                                 Text(
                                   sheet.name,
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: 11.5,
                                     fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
                                     color: isActive ? const Color(0xFF107C41) : Colors.grey.shade800,
                                   ),
                                 ),
                                 if (_workbook.sheets.length > 1 && isActive) ...[
-                                  const SizedBox(width: 4),
+                                  const SizedBox(width: 5),
                                   GestureDetector(
                                     onTap: () {
                                       _pushHistory();
@@ -668,7 +721,7 @@ class _ExcelHomeScreenState extends State<ExcelHomeScreen> {
                                         _syncFormulaBar();
                                       });
                                     },
-                                    child: const Icon(Icons.close, size: 13, color: Colors.grey),
+                                    child: const Icon(Icons.close, size: 12, color: Colors.grey),
                                   ),
                                 ],
                               ],
@@ -683,10 +736,14 @@ class _ExcelHomeScreenState extends State<ExcelHomeScreen> {
                   IconButton(
                     icon: const Icon(Icons.add, size: 18, color: Color(0xFF107C41)),
                     tooltip: 'Add Sheet',
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
                     onPressed: () {
                       _pushHistory();
                       setState(() {
                         _workbook.addSheet();
+                        _selection = const CellRange(startRow: 0, startCol: 0, endRow: 0, endCol: 0);
+                        _activeRow = 0;
+                        _activeCol = 0;
                         _recalculate();
                         _syncFormulaBar();
                       });
@@ -694,6 +751,13 @@ class _ExcelHomeScreenState extends State<ExcelHomeScreen> {
                   ),
                 ],
               ),
+            ),
+
+            // Iconic Live Status Bar at Bottom (SUM, AVERAGE, COUNT, Ready)
+            ExcelStatusBar(
+              stats: _rangeStats,
+              isAutoSaved: _isAutoSaved,
+              activeRangeText: rangeStr,
             ),
           ],
         ),

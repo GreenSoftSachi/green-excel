@@ -64,15 +64,16 @@ class _RibbonToolbarState extends State<RibbonToolbar> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Ribbon Tab Bar
+          // Ribbon Tabs Bar (Excel Fluent Design)
           Container(
-            height: 38,
-            color: const Color(0xFFF3F4F6),
+            height: 36,
+            color: const Color(0xFFF8F9FA),
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: RibbonTab.values.map((tab) {
                 final isSelected = _activeTab == tab;
                 final isCopilot = tab == RibbonTab.copilot;
+
                 return InkWell(
                   onTap: () {
                     if (isCopilot) {
@@ -97,16 +98,16 @@ class _RibbonToolbarState extends State<RibbonToolbar> {
                       children: [
                         Icon(
                           tab.icon,
-                          size: 16,
+                          size: 15,
                           color: isCopilot
                               ? const Color(0xFF107C41)
                               : (isSelected ? const Color(0xFF107C41) : Colors.grey.shade700),
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 5),
                         Text(
                           tab.title,
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 11.5,
                             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                             color: isCopilot
                                 ? const Color(0xFF107C41)
@@ -121,10 +122,10 @@ class _RibbonToolbarState extends State<RibbonToolbar> {
             ),
           ),
 
-          // Ribbon Actions Content
+          // Ribbon Actions Bar
           Container(
-            height: 52,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            height: 48,
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: _buildTabActions(),
@@ -158,23 +159,50 @@ class _RibbonToolbarState extends State<RibbonToolbar> {
         _actionButton(Icons.redo, 'Redo', widget.onRedo),
         _vDivider(),
 
-        // Bold
+        // Font Style: Bold, Italic, Underline
         _toggleButton(
           Icons.format_bold,
           widget.activeStyle.isBold,
           () => widget.onStyleChanged(widget.activeStyle.copyWith(isBold: !widget.activeStyle.isBold)),
         ),
-        // Italic
         _toggleButton(
           Icons.format_italic,
           widget.activeStyle.isItalic,
           () => widget.onStyleChanged(widget.activeStyle.copyWith(isItalic: !widget.activeStyle.isItalic)),
         ),
-        // Underline
         _toggleButton(
           Icons.format_underlined,
           widget.activeStyle.isUnderline,
           () => widget.onStyleChanged(widget.activeStyle.copyWith(isUnderline: !widget.activeStyle.isUnderline)),
+        ),
+        _vDivider(),
+
+        // Font Size adjust
+        Row(
+          children: [
+            _actionButton(
+              Icons.text_decrease,
+              'Decrease Font Size',
+              () {
+                if (widget.activeStyle.fontSize > 9) {
+                  widget.onStyleChanged(widget.activeStyle.copyWith(fontSize: widget.activeStyle.fontSize - 1));
+                }
+              },
+            ),
+            Text(
+              '${widget.activeStyle.fontSize.toInt()}pt',
+              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+            ),
+            _actionButton(
+              Icons.text_increase,
+              'Increase Font Size',
+              () {
+                if (widget.activeStyle.fontSize < 24) {
+                  widget.onStyleChanged(widget.activeStyle.copyWith(fontSize: widget.activeStyle.fontSize + 1));
+                }
+              },
+            ),
+          ],
         ),
         _vDivider(),
 
@@ -196,18 +224,33 @@ class _RibbonToolbarState extends State<RibbonToolbar> {
         ),
         _vDivider(),
 
-        // Fill Colors
+        // Cell Fill & Text Colors
         _colorPickerButton(
           'Fill',
           Icons.format_color_fill,
-          [Colors.white, const Color(0xFFF3FBF6), const Color(0xFFE1F5EA), const Color(0xFFFEF3C7), const Color(0xFFFEE2E2), const Color(0xFFEFF6FF), const Color(0xFFF3E8FF)],
+          [
+            Colors.white,
+            const Color(0xFFE8F5E9),
+            const Color(0xFFC8E6C9),
+            const Color(0xFFFFF9C4),
+            const Color(0xFFFFCCBC),
+            const Color(0xFFE1F5FE),
+            const Color(0xFFF3E5F5),
+            const Color(0xFFECEFF1),
+          ],
           (c) => widget.onStyleChanged(widget.activeStyle.copyWith(backgroundColor: c)),
         ),
-        // Text Colors
         _colorPickerButton(
           'Text',
           Icons.format_color_text,
-          [const Color(0xFF212529), const Color(0xFF107C41), const Color(0xFF1E3A8A), const Color(0xFFDC2626), const Color(0xFFD97706), const Color(0xFF7C3AED)],
+          [
+            const Color(0xFF212529),
+            const Color(0xFF107C41),
+            const Color(0xFF1E3A8A),
+            const Color(0xFFC62828),
+            const Color(0xFFE65100),
+            const Color(0xFF4A148C),
+          ],
           (c) => widget.onStyleChanged(widget.activeStyle.copyWith(textColor: c)),
         ),
         _vDivider(),
@@ -217,18 +260,18 @@ class _RibbonToolbarState extends State<RibbonToolbar> {
           tooltip: 'Number Format',
           initialValue: widget.activeStyle.numberFormat,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
+              color: const Color(0xFFF8F9FA),
               borderRadius: BorderRadius.circular(6),
               border: Border.all(color: Colors.grey.shade300),
             ),
             child: Row(
               children: [
-                const Icon(Icons.pin, size: 16, color: Color(0xFF107C41)),
+                const Icon(Icons.tag, size: 14, color: Color(0xFF107C41)),
                 const SizedBox(width: 4),
-                Text(_formatLabel(widget.activeStyle.numberFormat), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                const Icon(Icons.arrow_drop_down, size: 16),
+                Text(_formatLabel(widget.activeStyle.numberFormat), style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold)),
+                const Icon(Icons.arrow_drop_down, size: 14),
               ],
             ),
           ),
@@ -242,7 +285,7 @@ class _RibbonToolbarState extends State<RibbonToolbar> {
             const PopupMenuItem(value: CellNumberFormat.date, child: Text('Date (YYYY-MM-DD)')),
           ],
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 6),
 
         // Clear Cell
         _actionButton(Icons.backspace_outlined, 'Clear Cell', widget.onClearCell),
@@ -253,29 +296,31 @@ class _RibbonToolbarState extends State<RibbonToolbar> {
   Widget _buildInsertTab() {
     return Row(
       children: [
-        // 2026 Checkbox Feature
+        // 2026 Interactive Checkbox Button
         ElevatedButton.icon(
           style: ElevatedButton.styleFrom(
-            backgroundColor: widget.isCheckbox ? Colors.green.shade100 : const Color(0xFF107C41),
+            backgroundColor: widget.isCheckbox ? const Color(0xFFE8F5E9) : const Color(0xFF107C41),
             foregroundColor: widget.isCheckbox ? const Color(0xFF107C41) : Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
-          icon: Icon(widget.isCheckbox ? Icons.check_box : Icons.check_box_outline_blank, size: 16),
+          icon: Icon(widget.isCheckbox ? Icons.check_box : Icons.check_box_outline_blank, size: 15),
           label: Text(widget.isCheckbox ? 'Remove Checkbox' : 'Insert Checkbox (2026)'),
           onPressed: widget.onToggleCheckbox,
         ),
         const SizedBox(width: 8),
 
-        // Charts
+        // Visualizer Charts
         OutlinedButton.icon(
           style: OutlinedButton.styleFrom(
             foregroundColor: const Color(0xFF1E3A8A),
             side: const BorderSide(color: Color(0xFF1E3A8A)),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
-          icon: const Icon(Icons.bar_chart, size: 16),
+          icon: const Icon(Icons.bar_chart, size: 15),
           label: const Text('Insert Chart (Bar/Pie/Line)'),
           onPressed: widget.onOpenCharts,
         ),
@@ -293,9 +338,9 @@ class _RibbonToolbarState extends State<RibbonToolbar> {
         _formulaChip('=SUM()', '=SUM('),
         _formulaChip('=AVERAGE()', '=AVERAGE('),
         _formulaChip('=IF()', '=IF('),
-        _formulaChip('=XLOOKUP()', '=XLOOKUP('),
+        _formulaChip('=XLOOKUP() [2026]', '=XLOOKUP('),
         _vDivider(),
-        // 2026 Highlights
+        // 2026 Innovations
         _formulaChip('=REGEXTEST() [2026]', '=REGEXTEST('),
         _formulaChip('=REGEXEXTRACT() [2026]', '=REGEXEXTRACT('),
         _formulaChip('=PY() Python [2026]', '=PY('),
@@ -312,11 +357,12 @@ class _RibbonToolbarState extends State<RibbonToolbar> {
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF107C41),
             foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
-          icon: const Icon(Icons.auto_awesome, size: 16),
-          label: const Text('Open Copilot 2026 AI Assistant'),
+          icon: const Icon(Icons.auto_awesome, size: 15, color: Color(0xFF86EFAC)),
+          label: const Text('Launch Copilot 2026 AI Assistant'),
           onPressed: widget.onOpenCopilot,
         ),
       ],
@@ -332,9 +378,10 @@ class _RibbonToolbarState extends State<RibbonToolbar> {
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
-          icon: const Icon(Icons.print, size: 16),
-          label: const Text('Print Setup & Preview'),
+          icon: const Icon(Icons.print, size: 15),
+          label: const Text('Page Setup & Print / PDF'),
           onPressed: widget.onOpenPrint,
         ),
       ],
@@ -343,26 +390,26 @@ class _RibbonToolbarState extends State<RibbonToolbar> {
 
   Widget _actionButton(IconData icon, String tooltip, VoidCallback onTap) {
     return IconButton(
-      icon: Icon(icon, size: 18, color: Colors.grey.shade800),
+      icon: Icon(icon, size: 16, color: Colors.grey.shade800),
       tooltip: tooltip,
       onPressed: onTap,
-      constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+      constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
       padding: EdgeInsets.zero,
     );
   }
 
   Widget _toggleButton(IconData icon, bool isActive, VoidCallback onTap) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 2),
+      margin: const EdgeInsets.symmetric(horizontal: 1),
       decoration: BoxDecoration(
-        color: isActive ? const Color(0xFF107C41).withOpacity(0.15) : Colors.transparent,
+        color: isActive ? const Color(0xFF107C41).withOpacity(0.12) : Colors.transparent,
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: isActive ? const Color(0xFF107C41) : Colors.transparent),
       ),
       child: IconButton(
-        icon: Icon(icon, size: 18, color: isActive ? const Color(0xFF107C41) : Colors.grey.shade800),
+        icon: Icon(icon, size: 16, color: isActive ? const Color(0xFF107C41) : Colors.grey.shade800),
         onPressed: onTap,
-        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+        constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
         padding: EdgeInsets.zero,
       ),
     );
@@ -372,11 +419,11 @@ class _RibbonToolbarState extends State<RibbonToolbar> {
     return PopupMenuButton<Color>(
       tooltip: '$label Color',
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
         child: Row(
           children: [
-            Icon(icon, size: 18, color: Colors.grey.shade800),
-            const Icon(Icons.arrow_drop_down, size: 14),
+            Icon(icon, size: 16, color: Colors.grey.shade800),
+            const Icon(Icons.arrow_drop_down, size: 12),
           ],
         ),
       ),
@@ -386,7 +433,7 @@ class _RibbonToolbarState extends State<RibbonToolbar> {
           value: c,
           child: Row(
             children: [
-              Container(width: 20, height: 20, color: c, margin: const EdgeInsets.only(right: 8)),
+              Container(width: 18, height: 18, color: c, margin: const EdgeInsets.only(right: 8)),
               Text('#${c.value.toRadixString(16).substring(2).toUpperCase()}'),
             ],
           ),
@@ -397,10 +444,10 @@ class _RibbonToolbarState extends State<RibbonToolbar> {
 
   Widget _formulaChip(String label, String formulaStart) {
     return Padding(
-      padding: const EdgeInsets.only(right: 6),
+      padding: const EdgeInsets.only(right: 5),
       child: ActionChip(
-        label: Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
-        backgroundColor: Colors.grey.shade100,
+        label: Text(label, style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
+        backgroundColor: const Color(0xFFF8F9FA),
         side: BorderSide(color: Colors.grey.shade300),
         onPressed: () => widget.onInsertFormula(formulaStart),
       ),
@@ -409,11 +456,11 @@ class _RibbonToolbarState extends State<RibbonToolbar> {
 
   Widget _chipButton(String label, IconData icon, VoidCallback onTap) {
     return Padding(
-      padding: const EdgeInsets.only(right: 6),
+      padding: const EdgeInsets.only(right: 5),
       child: ActionChip(
-        avatar: Icon(icon, size: 14),
-        label: Text(label, style: const TextStyle(fontSize: 11)),
-        backgroundColor: Colors.grey.shade100,
+        avatar: Icon(icon, size: 13),
+        label: Text(label, style: const TextStyle(fontSize: 10.5)),
+        backgroundColor: const Color(0xFFF8F9FA),
         onPressed: onTap,
       ),
     );
@@ -422,8 +469,8 @@ class _RibbonToolbarState extends State<RibbonToolbar> {
   Widget _vDivider() {
     return Container(
       width: 1,
-      height: 24,
-      margin: const EdgeInsets.symmetric(horizontal: 6),
+      height: 20,
+      margin: const EdgeInsets.symmetric(horizontal: 5),
       color: Colors.grey.shade300,
     );
   }

@@ -1,4 +1,55 @@
+import 'dart:math' as math;
 import 'cell_data.dart';
+
+class CellRange {
+  final int startRow;
+  final int startCol;
+  final int endRow;
+  final int endCol;
+
+  const CellRange({
+    required this.startRow,
+    required this.startCol,
+    required this.endRow,
+    required this.endCol,
+  });
+
+  int get minRow => math.min(startRow, endRow);
+  int get maxRow => math.max(startRow, endRow);
+  int get minCol => math.min(startCol, endCol);
+  int get maxCol => math.max(startCol, endCol);
+
+  bool contains(int row, int col) {
+    return row >= minRow && row <= maxRow && col >= minCol && col <= maxCol;
+  }
+
+  bool isSingleCell() => minRow == maxRow && minCol == maxCol;
+
+  String toRangeString() {
+    final startKey = SheetData.cellKey(minRow, minCol);
+    if (isSingleCell()) return startKey;
+    final endKey = SheetData.cellKey(maxRow, maxCol);
+    return '$startKey:$endKey';
+  }
+}
+
+class RangeStats {
+  final int count;
+  final int numericCount;
+  final double sum;
+  final double average;
+  final double min;
+  final double max;
+
+  const RangeStats({
+    this.count = 0,
+    this.numericCount = 0,
+    this.sum = 0,
+    this.average = 0,
+    this.min = 0,
+    this.max = 0,
+  });
+}
 
 class SheetData {
   String name;
@@ -48,6 +99,48 @@ class SheetData {
   void setCell(int row, int col, CellData cell) {
     final key = cellKey(row, col);
     cells[key] = cell;
+  }
+
+  RangeStats computeRangeStats(CellRange range) {
+    int count = 0;
+    int numericCount = 0;
+    double sum = 0;
+    double minVal = double.infinity;
+    double maxVal = double.negativeInfinity;
+
+    for (int r = range.minRow; r <= range.maxRow; r++) {
+      for (int c = range.minCol; c <= range.maxCol; c++) {
+        final key = cellKey(r, c);
+        if (cells.containsKey(key)) {
+          final cell = cells[key]!;
+          if (cell.computedValue.trim().isNotEmpty) {
+            count++;
+            final valStr = cell.computedValue
+                .replaceAll('\$', '')
+                .replaceAll('Rs.', '')
+                .replaceAll(',', '')
+                .trim();
+            final numVal = double.tryParse(valStr);
+            if (numVal != null) {
+              numericCount++;
+              sum += numVal;
+              if (numVal < minVal) minVal = numVal;
+              if (numVal > maxVal) maxVal = numVal;
+            }
+          }
+        }
+      }
+    }
+
+    final avg = numericCount > 0 ? (sum / numericCount) : 0.0;
+    return RangeStats(
+      count: count,
+      numericCount: numericCount,
+      sum: sum,
+      average: avg,
+      min: minVal == double.infinity ? 0 : minVal,
+      max: maxVal == double.negativeInfinity ? 0 : maxVal,
+    );
   }
 
   SheetData copy() {
