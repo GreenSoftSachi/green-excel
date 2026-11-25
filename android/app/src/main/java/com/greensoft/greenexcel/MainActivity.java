@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
@@ -14,6 +15,7 @@ import android.print.PrintAttributes;
 import android.print.PrintDocumentAdapter;
 import android.print.PrintDocumentInfo;
 import android.print.PrintManager;
+import android.provider.OpenableColumns;
 import android.util.Base64;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,13 +30,18 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.webkit.WebViewAssetLoader;
+import org.json.JSONObject;
+import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 public class MainActivity extends AppCompatActivity {
     private WebView webView;
     private ValueCallback<Uri[]> filePathCallback;
     private static final int FILE_CHOOSER_REQUEST_CODE = 1001;
+    private Uri pendingFileUri = null;
+    private boolean pageLoaded = false;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -73,6 +80,17 @@ public class MainActivity extends AppCompatActivity {
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 return false;
             }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                pageLoaded = true;
+                if (pendingFileUri != null) {
+                    Uri uriToOpen = pendingFileUri;
+                    pendingFileUri = null;
+                    sendUriToWebView(uriToOpen);
+                }
+            }
         });
 
         webView.setWebChromeClient(new WebChromeClient() {
@@ -99,6 +117,72 @@ public class MainActivity extends AppCompatActivity {
         webView.addJavascriptInterface(bridge, "GreenExcelAndroid");
 
         webView.loadUrl("https://appassets.androidplatform.net/assets/www/index.html");
+        handleViewIntent(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleViewIntent(intent);
+    }
+
+    private void handleViewIntent(Intent intent) {
+        if (intent == null) return;
+        String action = intent.getAction();
+        Uri data = intent.getData();
+        if (Intent.ACTION_VIEW.equals(action) && data != null) {
+            if (pageLoaded) {
+                sendUriToWebView(data);
+            } else {
+                pendingFileUri = data;
+            }
+        }
+    }
+
+    private void sendUriToWebView(Uri uri) {
+        new Thread(() -> {
+            try {
+                String fileName = queryFileName(uri);
+                InputStream is = getContentResolver().openInputStream(uri);
+                if (is == null) return;
+                ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                byte[] chunk = new byte[8192];
+                int n;
+                while ((n = is.read(chunk)) != -1) {
+                    buffer.write(chunk, 0, n);
+                }
+                is.close();
+                String base64 = Base64.encodeToString(buffer.toByteArray(), Base64.NO_WRAP);
+                String js = "if (window.openExternalExcelFile) { window.openExternalExcelFile("
+                        + JSONObject.quote(fileName) + ", " + JSONObject.quote(base64) + "); }";
+                runOnUiThread(() -> {
+                    if (webView != null) {
+                        webView.evaluateJavascript(js, null);
+                    }
+                });
+            } catch (Exception ignored) {}
+        }).start();
+    }
+
+    private String queryFileName(Uri uri) {
+        String name = null;
+        if ("content".equals(uri.getScheme())) {
+            try (Cursor cursor = getContentResolver().query(uri, null, null, null, null)) {
+                if (cursor != null && cursor.moveToFirst()) {
+                    int idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                    if (idx >= 0) name = cursor.getString(idx);
+                }
+            } catch (Exception ignored) {}
+        }
+        if (name == null || name.isEmpty()) {
+            String path = uri.getPath();
+            if (path != null) {
+                int cut = path.lastIndexOf('/');
+                if (cut >= 0) name = path.substring(cut + 1);
+            }
+        }
+        return (name != null && !name.isEmpty()) ? name : "document.xlsx";
     }
 
     @Override
