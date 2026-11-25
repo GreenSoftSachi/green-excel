@@ -2,6 +2,8 @@ package com.greensoft.greenexcel;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -122,6 +124,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        if (webView != null && pageLoaded) {
+            webView.evaluateJavascript("if (window.onAppResumed) { window.onAppResumed(); }", null);
+        }
+    }
+
+    @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
@@ -238,6 +248,31 @@ public class MainActivity extends AppCompatActivity {
                     imm.hideSoftInputFromWindow(webView.getWindowToken(), 0);
                 }
             });
+        }
+
+        @JavascriptInterface
+        public void openExternalUrl(String url) {
+            activity.runOnUiThread(() -> {
+                try {
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                    activity.startActivity(intent);
+                } catch (Exception ignored) {}
+            });
+        }
+
+        @JavascriptInterface
+        public String getClipboardText() {
+            try {
+                ClipboardManager cm = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
+                if (cm != null && cm.hasPrimaryClip()) {
+                    ClipData clip = cm.getPrimaryClip();
+                    if (clip != null && clip.getItemCount() > 0) {
+                        CharSequence text = clip.getItemAt(0).coerceToText(activity);
+                        return text != null ? text.toString() : "";
+                    }
+                }
+            } catch (Exception ignored) {}
+            return "";
         }
 
         @JavascriptInterface
