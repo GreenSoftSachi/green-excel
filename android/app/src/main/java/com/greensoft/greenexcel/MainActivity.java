@@ -42,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int FILE_CHOOSER_REQUEST_CODE = 1001;
     private Uri pendingFileUri = null;
     private boolean pageLoaded = false;
+    private boolean openedFromExternalFile = false;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -132,6 +133,7 @@ public class MainActivity extends AppCompatActivity {
         String action = intent.getAction();
         Uri data = intent.getData();
         if (Intent.ACTION_VIEW.equals(action) && data != null) {
+            openedFromExternalFile = true;
             if (pageLoaded) {
                 sendUriToWebView(data);
             } else {
@@ -202,6 +204,8 @@ public class MainActivity extends AppCompatActivity {
     public void onBackPressed() {
         if (webView != null && webView.canGoBack()) {
             webView.goBack();
+        } else if (openedFromExternalFile || !isTaskRoot()) {
+            finish();
         } else {
             moveTaskToBack(true);
         }
