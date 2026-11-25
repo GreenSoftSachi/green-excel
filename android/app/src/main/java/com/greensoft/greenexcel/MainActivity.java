@@ -1,5 +1,6 @@
 package com.greensoft.greenexcel;
 
+import android.accounts.AccountManager;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ClipData;
@@ -42,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
     private WebView webView;
     private ValueCallback<Uri[]> filePathCallback;
     private static final int FILE_CHOOSER_REQUEST_CODE = 1001;
+    private static final int GOOGLE_ACCOUNT_PICKER_CODE = 1002;
     private Uri pendingFileUri = null;
     private boolean pageLoaded = false;
     private boolean openedFromExternalFile = false;
@@ -205,6 +207,15 @@ public class MainActivity extends AppCompatActivity {
                 filePathCallback.onReceiveValue(results);
                 filePathCallback = null;
             }
+        } else if (requestCode == GOOGLE_ACCOUNT_PICKER_CODE) {
+            if (resultCode == Activity.RESULT_OK && data != null) {
+                String email = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
+                if (email != null && !email.isEmpty() && webView != null) {
+                    String js = "if (window.onGoogleAccountSelected) { window.onGoogleAccountSelected("
+                            + JSONObject.quote(email) + "); }";
+                    webView.evaluateJavascript(js, null);
+                }
+            }
         } else {
             super.onActivityResult(requestCode, resultCode, data);
         }
@@ -247,6 +258,18 @@ public class MainActivity extends AppCompatActivity {
                 if (imm != null) {
                     imm.hideSoftInputFromWindow(webView.getWindowToken(), 0);
                 }
+            });
+        }
+
+        @JavascriptInterface
+        public void signInWithGoogle() {
+            activity.runOnUiThread(() -> {
+                try {
+                    Intent intent = AccountManager.newChooseAccountIntent(
+                            null, null, new String[]{"com.google"},
+                            null, null, null, null);
+                    activity.startActivityForResult(intent, GOOGLE_ACCOUNT_PICKER_CODE);
+                } catch (Exception ignored) {}
             });
         }
 
