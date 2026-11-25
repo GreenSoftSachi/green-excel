@@ -297,12 +297,27 @@
         var file = new File([uint8Bytes], fileName, { type: guessMimeType(fileName) });
         var dt = new DataTransfer();
         dt.items.add(file);
-        var opts = { bubbles: true, cancelable: true, dataTransfer: dt };
+        var opts = { bubbles: true, cancelable: true, clientX: 200, clientY: 200, dataTransfer: dt };
         c.dispatchEvent(new DragEvent('dragenter', opts));
         c.dispatchEvent(new DragEvent('dragover', opts));
         c.dispatchEvent(new DragEvent('drop', opts));
         saveRecentDoc(fileName, uint8Bytes);
       } catch (err) {}
+    }
+
+    function dispatchWhenEngineReady(fileName, uint8Bytes) {
+      var attempts = 0;
+      var timer = setInterval(function () {
+        attempts++;
+        var loader = document.getElementById('gridcraft_loading');
+        var loaderGone = !loader || loader.style.display === 'none' || getComputedStyle(loader).display === 'none';
+        if ((window.__wasmReady && loaderGone) || attempts > 40) {
+          clearInterval(timer);
+          setTimeout(function () {
+            dispatchFileToEngine(fileName, uint8Bytes);
+          }, 500);
+        }
+      }, 250);
     }
 
     window.openExternalExcelFile = function (fileName, base64Data) {
@@ -314,7 +329,7 @@
           bytes[i] = bin.charCodeAt(i);
         }
         if (window.__wasmReady) {
-          dispatchFileToEngine(fileName, bytes);
+          dispatchWhenEngineReady(fileName, bytes);
         } else {
           window.__pendingExternalFile = { name: fileName, bytes: bytes };
         }
@@ -345,9 +360,7 @@
     if (window.__pendingExternalFile) {
       const pending = window.__pendingExternalFile;
       window.__pendingExternalFile = null;
-      setTimeout(() => {
-        dispatchFileToEngine(pending.name, pending.bytes);
-      }, 600);
+      dispatchWhenEngineReady(pending.name, pending.bytes);
     }
   </script>
 </body>
