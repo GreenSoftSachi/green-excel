@@ -195,6 +195,9 @@
 
         if (isGreenSidebar) {
           if (aiFab) aiFab.style.display = 'none';
+          if (promoCard) {
+            promoCard.style.display = (!hasAiKey && !window.__aiPromoDismissed && window.__activeBackstageTab !== 'about') ? 'block' : 'none';
+          }
           var pRight = new Uint8Array(4);
           globalGL.readPixels(Math.floor(w * 0.35), Math.floor(h * 0.5), 1, 1, globalGL.RGBA, globalGL.UNSIGNED_BYTE, pRight);
           var isWhitePane = (pRight[0] > 235 && pRight[1] > 235 && pRight[2] > 235);
@@ -216,9 +219,6 @@
             }
             if (recentCard) {
               recentCard.style.display = (window.__hasGreenRecents && window.__activeBackstageTab !== 'about') ? 'block' : 'none';
-            }
-            if (promoCard) {
-              promoCard.style.display = (!hasAiKey && !window.__aiPromoDismissed && window.__activeBackstageTab !== 'about') ? 'block' : 'none';
             }
             return;
           }
